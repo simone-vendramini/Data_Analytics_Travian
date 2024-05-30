@@ -18,8 +18,6 @@ from utils import *
 # Load the graphs
 get_graphs()
 
-# bins = np.arange(1, int(max(deltas_without_zeros)) + 1.5) - 0.5
-
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css'] #default
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets) #default
@@ -27,46 +25,47 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets) #default
 
 app.layout = html.Div(children=[
     html.H1(children='Travian Dashboard'),
-
     html.Div([
         html.Div([
-            dcc.Dropdown(
-                id='type-degree-dropdown',
-                options=[
-                    {'label': 'Outdegree', 'value': 'outdegree'},
-                    {'label': 'Indegree', 'value': 'indegree'}
-                ],
-                value='outdegree',
-                style={'width': '100%'},
-                clearable=False
-            ),
-        ], style={'width': '48%', 'display': 'inline-block'}),
-        html.Div([
-            dcc.Dropdown(
-                id='type-graph-dropdown',
-                options=[
-                    {'label': 'Attack', 'value': 'attack'},
-                    {'label': 'Trade', 'value': 'trade'},
-                    {'label': 'Message', 'value': 'message'},
-                ],
-                value='attack',
-                style={'width': '100%'},
-                clearable=False
-            ),
-        ], style={'width': '48%', 'display': 'inline-block', 'marginLeft': '4%'}),
-    ], style={'text-align': 'center'}),
-    
-    html.Div(children='Selezione giorno', style={'text-align': 'center'}),
+            html.Div([
+                dcc.Dropdown(
+                    id='type-degree-dropdown',
+                    options=[
+                        {'label': 'Outdegree', 'value': 'outdegree'},
+                        {'label': 'Indegree', 'value': 'indegree'}
+                    ],
+                    value='outdegree',
+                    style={'width': '100%'},
+                    clearable=False
+                ),
+            ], style={'width': '48%', 'display': 'inline-block'}),
+            html.Div([
+                dcc.Dropdown(
+                    id='type-graph-dropdown',
+                    options=[
+                        {'label': 'Attack', 'value': 'attack'},
+                        {'label': 'Trade', 'value': 'trade'},
+                        {'label': 'Message', 'value': 'message'},
+                    ],
+                    value='attack',
+                    style={'width': '100%'},
+                    clearable=False
+                ),
+            ], style={'width': '48%', 'display': 'inline-block', 'marginLeft': '4%'}),
+        ], style={'text-align': 'center'}),
+        
+        html.Div(children='Selezione giorno', style={'text-align': 'center'}),
 
-    dcc.Slider(
-        id='day-slider',
-        min=1,
-        max=30,
-        value=10,
-        marks={i: str(i) for i in range(1, 31)},
-        step=1
-    ),
-    dcc.Graph(id='histogram-graph')
+        dcc.Slider(
+            id='day-slider',
+            min=1,
+            max=30,
+            value=10,
+            marks={i: str(i) for i in range(1, 31)},
+            step=1
+        ),
+        dcc.Graph(id='histogram-graph')
+    ], style={'width': '80%', 'margin': 'auto'})
 
 ])
 
@@ -110,7 +109,7 @@ def update_histogram(type_degree, type_graph, day):
     return fig
 
 if __name__ == '__main__':
-    app.run_server(debug=True) #allows us to load our modification dynamically
+    app.run_server(debug=True)
 
 
 #connecs to http://127.0.0.1:8050/
