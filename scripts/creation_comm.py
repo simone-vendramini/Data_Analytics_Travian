@@ -232,6 +232,39 @@ def create_community_graphs(communities : List[List[Set[int]]],
 
   return (graphs_communities_attacks, graphs_communities_messages, graphs_communities_trades)
 
+def check_communities_graph_consistency(community_graph : ig.Graph,
+                                        player_graph : ig.Graph) -> dict:
+  Error = {
+    'community_with_player_not_in_player_graph': [], # list of communities, each one has no players in player graph
+    'n_edges_in_community_and_in_graph': () # (total edges in community graph, total edges in player graph) must be equal
+  }
+
+  player_labels = [int(l) for l in player_graph.vs['label']]
+
+  for community_node in community_graph.vs['label']:
+    if set.intersection(eval(community_node), set(player_labels)) == set():
+      Error['community_with_player_not_in_player_graph'].append(eval(community_node))
+
+  total_edges_in_player_graph = 0
+  for player_edge in player_graph.es:
+    source_player = player_graph.vs[player_edge.source]
+    target_player = player_graph.vs[player_edge.target]
+    find_source = False
+    find_target = False
+    for community in community_graph.vs['label']:
+      set_community = eval(community)
+      if int(source_player['label']) in set_community:
+        find_source = True
+      if int(target_player['label']) in set_community:
+        find_target = True
+      if find_source and find_target:
+        total_edges_in_player_graph = total_edges_in_player_graph + player_edge['count_edge']
+        break
+
+  total_edges_in_comm_graph = sum(community_graph.es['n_interactions'])
+
+  Error['n_edges_missing_in_community_graph'] = (total_edges_in_comm_graph, total_edges_in_player_graph)
+  return Error
 
 
 # GLOBALS
@@ -259,7 +292,7 @@ for i in range(NAME_FILES['range_day'][0], NAME_FILES['range_day'][1] + 1):
 GRAPHS_COMM_ATTACKS = []
 GRAPHS_COMM_MESSAGES = []
 GRAPHS_COMM_TRADES = []
-
+"""
 for day in range(len(GRAPHS_ATTACKS)):
     GRAPHS_ATTACKS[day] = correct_graph_inplace(GRAPHS_ATTACKS[day])
     GRAPHS_MESSAGES[day] = correct_graph_inplace(GRAPHS_MESSAGES[day])
@@ -276,3 +309,40 @@ with parallel_config(backend='threading', n_jobs=16):
 print("trades")
 with parallel_config(backend='threading', n_jobs=16):
     GRAPHS_COMM_TRADES = Parallel()(delayed(worker)(GT_COMMUNITIES, GRAPHS_TRADES, day, "TRADES") for day in range(len(GRAPHS_TRADES)))
+"""
+
+NAME_FILES_COMMUNITY = {
+    'path':  "./data/",
+    'attacks': 'GRAPHS_COMM_ATTACKS_',
+    'messages': 'GRAPHS_COMM_MESSAGES_',
+    'trades': 'GRAPHS_COMM_TRADES_',
+    'ext': '.graphml',
+    'range_day': (0, 29)
+}
+
+COMM_GRAPHS_ATTACKS = [] # COMM_GRAPHS_ATTACKS[0] = grafo degli attacks tra communities al giorno 0
+COMM_GRAPHS_MESSAGES = [] # COMM_GRAPHS_MESSAGES[0] = grafo dei messages tra communities al giorno 0
+COMM_GRAPHS_TRADES = [] # COMM_GRAPHS_TRADES[0] = grafo dei trades tra communities al giorno 0
+
+
+for day in range(len(GRAPHS_ATTACKS)):
+  GRAPHS_ATTACKS[day] = correct_graph_inplace(GRAPHS_ATTACKS[day])
+  GRAPHS_MESSAGES[day] = correct_graph_inplace(GRAPHS_MESSAGES[day])
+  GRAPHS_TRADES[day] = correct_graph_inplace(GRAPHS_TRADES[day])
+
+for i in range(NAME_FILES_COMMUNITY['range_day'][0], NAME_FILES_COMMUNITY['range_day'][1] + 1):
+  COMM_GRAPHS_ATTACKS.append(ig.read(NAME_FILES_COMMUNITY['path'] + NAME_FILES_COMMUNITY['attacks'] + str(i) + NAME_FILES_COMMUNITY['ext'], format="graphml"))
+  COMM_GRAPHS_MESSAGES.append(ig.read(NAME_FILES_COMMUNITY['path'] + NAME_FILES_COMMUNITY['messages'] + str(i) + NAME_FILES_COMMUNITY['ext'], format="graphml"))
+  COMM_GRAPHS_TRADES.append(ig.read(NAME_FILES_COMMUNITY['path'] + NAME_FILES_COMMUNITY['trades'] + str(i) + NAME_FILES_COMMUNITY['ext'], format="graphml"))
+  
+
+for day in range(len(COMM_GRAPHS_ATTACKS)):
+  err_attacks = check_communities_graph_consistency(COMM_GRAPHS_ATTACKS[day], GRAPHS_ATTACKS[day])
+  if err_attacks['community_with_player_not_in_player_graph'] != [] or err_attacks['n_edges_missing_in_community_graph'][0] - err_attacks['n_edges_missing_in_community_graph'][1] != 0:
+    print(err_attacks)
+  err_messages = check_communities_graph_consistency(COMM_GRAPHS_MESSAGES[day], GRAPHS_MESSAGES[day])
+  if err_messages['community_with_player_not_in_player_graph'] != [] or err_messages['n_edges_missing_in_community_graph'][0] - err_messages['n_edges_missing_in_community_graph'][1] != 0:
+    print(err_messages)
+  err_trades = check_communities_graph_consistency(COMM_GRAPHS_TRADES[day], GRAPHS_TRADES[day])
+  if err_trades['community_with_player_not_in_player_graph'] != [] or err_trades['n_edges_missing_in_community_graph'][0] - err_trades['n_edges_missing_in_community_graph'][1] != 0:
+    print(err_trades)
