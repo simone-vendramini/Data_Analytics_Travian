@@ -26,12 +26,13 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets) #default
 app.layout = html.Div(children=[
     html.H1(children='Travian Dashboard'),
     html.Div([
+
         html.Div(['Istogramma differenze dei gradi dei nodi calcolato e fornito'], style={'text-align': 'center', 'textColor': 'darkslategray', 'fontSize': 20, 'margin': '10px'}),
         html.Div([
             html.Div([
                 html.Div([
                     dcc.Dropdown(
-                        id='type-degree-dropdown',
+                        id='1-type-degree-dropdown',
                         options=[
                             {'label': 'Outdegree', 'value': 'outdegree'},
                             {'label': 'Indegree', 'value': 'indegree'}
@@ -43,7 +44,7 @@ app.layout = html.Div(children=[
                 ], style={'width': '48%', 'display': 'inline-block'}),
                 html.Div([
                     dcc.Dropdown(
-                        id='type-graph-dropdown',
+                        id='1-type-graph-dropdown',
                         options=[
                             {'label': 'Attack', 'value': 'attack'},
                             {'label': 'Trade', 'value': 'trade'},
@@ -55,22 +56,54 @@ app.layout = html.Div(children=[
                     ),
                 ], style={'width': '48%', 'display': 'inline-block', 'marginLeft': '4%'}),
             ], style={'text-align': 'center'}),
-            
             html.Div(children='Selezione giorno', style={'text-align': 'center'}),
-
             dcc.Slider(
-                id='day-slider',
+                id='1-day-slider',
                 min=1,
                 max=30,
                 value=10,
                 marks={i: str(i) for i in range(1, 31)},
                 step=1
             ),
-            dcc.Graph(id='histogram-graph'),
+            dcc.Graph(id='1-histogram-graph'),
             html.Div(
-                id='hover-data',
+                id='1-hover-data',
                 style={'padding': '10px', 'margin': '10px', 'text-align': 'center'}
             )
+        ], style={
+            'border': '2px solid darkslategray',
+            'padding': '10px',
+            'margin': '10px',
+            'border-radius': '15px'
+            }),
+
+
+        html.Div(['Sottografi indegree/outdegree sbagliati'], style={'text-align': 'center', 'textColor': 'darkslategray', 'fontSize': 20, 'margin': '10px'}),
+        html.Div([
+            html.Div([
+                html.Div([
+                    dcc.Dropdown(
+                        id='2-type-graph-dropdown',
+                        options=[
+                            {'label': 'Attack', 'value': 'attack'},
+                            {'label': 'Trade', 'value': 'trade'}
+                        ],
+                        value='attack',
+                        style={'width': '100%'},
+                        clearable=False
+                    ),
+                ], style={'width': '48%', 'display': 'inline-block', 'marginLeft': '4%'}),
+            ], style={'text-align': 'center'}),
+            html.Div(children='Selezione giorno', style={'text-align': 'center'}),
+            dcc.Slider(
+                id='2-day-slider',
+                min=1,
+                max=30,
+                value=10,
+                marks={i: str(i) for i in range(1, 31)},
+                step=1
+            ),
+            html.Img(id='2-output-image', src=encode_image('./img/graph_degree.png'), style={'maxWidth': '100%', 'maxHeight': '100%', 'width': 'auto', 'height': 'auto'}),
         ], style={
             'border': '2px solid darkslategray',
             'padding': '10px',
@@ -82,10 +115,10 @@ app.layout = html.Div(children=[
 ])
 
 @app.callback(
-    Output('histogram-graph', 'figure'),
-    Input('type-degree-dropdown', 'value'),
-    Input('type-graph-dropdown', 'value'),
-    Input('day-slider', 'value'),
+    Output('1-histogram-graph', 'figure'),
+    Input('1-type-degree-dropdown', 'value'),
+    Input('1-type-graph-dropdown', 'value'),
+    Input('1-day-slider', 'value'),
 )
 def update_histogram(type_degree, type_graph, day):
     day -= 1
@@ -120,8 +153,8 @@ def update_histogram(type_degree, type_graph, day):
     return fig
 
 @app.callback(
-    Output('hover-data', 'children'),
-    Input('histogram-graph', 'hoverData')
+    Output('1-hover-data', 'children'),
+    Input('1-histogram-graph', 'hoverData')
 )
 def display_hover_data(hoverData):
     if hoverData is None:
@@ -132,6 +165,20 @@ def display_hover_data(hoverData):
     category = point['x']
     value = point['y']
     return f"Ci sono {value} nodi con una differenza di {category} gradi rispetto alle informazioni fornite."
+
+@app.callback(
+    Output('2-output-image', 'src'),
+    Input('2-type-graph-dropdown', 'value'),
+    Input('2-day-slider', 'value'),
+)
+def update_image(value, day):
+    day -= 1
+    if value == 'attack':
+        g, visual_style, error = error_subgraph(GRAPHS_ATTACKS[day], day)
+    else:
+        g, visual_style, error = error_subgraph(GRAPHS_TRADES[day], day)
+    plot_wrong_consistencies_subgraph((g, visual_style, error))
+    return encode_image('./img/graph_degree.png')
 
 if __name__ == '__main__':
     app.run_server(debug=True)
