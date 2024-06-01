@@ -12,6 +12,7 @@ import plotly.graph_objs as go
 
 from import_graphs import *
 from utils import *
+from manage_graphs import *
 
 
 
@@ -174,10 +175,10 @@ def display_hover_data(hoverData):
 def update_image(value, day):
     day -= 1
     if value == 'attack':
-        g, visual_style, error = error_subgraph(GRAPHS_ATTACKS[day], day)
+        g, visual_style, error = create_error_subgraph(GRAPHS_ATTACKS[day], day)
     else:
-        g, visual_style, error = error_subgraph(GRAPHS_TRADES[day], day)
-    plot_wrong_consistencies_subgraph((g, visual_style, error))
+        g, visual_style, error = create_error_subgraph(GRAPHS_TRADES[day], day)
+    create_img_error_subgraph((g, visual_style, error))
     return encode_image('./img/graph_degree.png')
 
 if __name__ == '__main__':
