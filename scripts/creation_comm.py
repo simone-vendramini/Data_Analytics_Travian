@@ -7,44 +7,11 @@ from collections import Counter
 import random
 import pandas as pd
 from joblib import Parallel, delayed,parallel_config
+import heapq
 
-def read_gt_commiunities(path : str = "data/communities-2009-12-1.txt") -> List[Set[int]]:
-  file = open(path, "r")
-  content = file.readlines()
-  file.close()
-
-  ris = []
-
-  for community in content:
-    list_of_nodes = community[:-1].split(' ')
-    ris_nodes = set()
-    for node in list_of_nodes:
-      ris_nodes.add(int(node))
-    ris.append(ris_nodes)
-
-  return ris
-
-def check_attributes_consistency(graph : ig.Graph, day : int) -> dict:
-  Errors = {
-      "id-label": set(), # set of vertexes with different value of id and label attributes w
-      "indegree": set(), # set of (id_vertex, real_indegree_vertex, indegree_vertex_attr)
-      "outdegree": set(), # set of (id_vertex, real_outdegree_vertex, outdegree_vertex_attr)
-      "edgelabel": set(), # set of edges with edgelabel attribute different by ""
-      "edgetime": set(), # set of edges with edgetime attribute different of the day
-  }
-  for v in graph.vs:
-    if v["id"] != v["label"]:
-      Errors["id-label"].add(v)
-    if v["indegree"] != v.indegree():
-      Errors["indegree"].add((v.index, v.indegree(), v["indegree"]))
-    if v["outdegree"] != v.outdegree():
-      Errors["outdegree"].add((v.index, v.outdegree(), v["outdegree"]))
-  for e in graph.es:
-    if e["edgelabel"] != '':
-      Errors["edgelabel"].add(e)
-    if datetime.utcfromtimestamp(e["edgetime"]).strftime('%Y-%m-%d') != datetime(2009, 12, day + 1).strftime('%Y-%m-%d'):
-      Errors["edgetime"].add(e)
-  return Errors
+from import_graphs import *
+from utils import *
+from manage_graphs import *
 
 def correct_graph_inplace(graph : ig.Graph) -> ig.Graph:
   if 'id' in graph.vs.attributes():
@@ -71,109 +38,6 @@ def correct_graph_inplace(graph : ig.Graph) -> ig.Graph:
     del(graph.es['edgetime'])
   return graph
 
-def get_all_node_of_graph(graphs : ig.Graph) -> Set[int]:
-  return get_all_nodes_of_graph_list([graphs])
-
-def get_all_nodes_of_graph_list(graphs : List[ig.Graph]) -> Set[int]:
-  r = set()
-  for g in graphs:
-    r = set.union(r, set(g.vs['label']))
-  return set([int(id) for id in r])
-
-def get_all_nodes_from_all_type_graph(graphs_attack : ig.Graph, graphs_messages: ig.Graph, graphs_trade : ig.Graph) -> Set[int]:
-  return get_all_nodes_from_list_of_all_type_graph([graphs_attack], [graphs_messages], [graphs_trade])
-
-def get_all_nodes_from_list_of_all_type_graph(graphs_attack : List[ig.Graph], graphs_messages: List[ig.Graph], graphs_trade : List[ig.Graph]) -> Set[int]:
-  return set.union(
-      get_all_nodes_of_graph_list(graphs_attack),
-      get_all_nodes_of_graph_list(graphs_messages),
-      get_all_nodes_of_graph_list(graphs_trade)
-  )
-
-def check_community_consistency(comm : List[List[Set[int]]], all_players : List[Set[int]]) -> dict:
-  errors_of_dataset = {
-      "missing_players": set(),
-      "intersection_between_community": []
-  }
-
-  all_players_in_communities = set()
-
-  for i in range(0, 30):
-
-    all_combination_between_communities = combinations(comm[i], 2)
-
-    insersections = []
-
-    for (first_community, second_community) in all_combination_between_communities:
-      if set.intersection(first_community, second_community) != set():
-        insersections.append((first_community, second_community))
-
-    errors_of_dataset["intersection_between_community"].append(insersections)
-
-    all_players_in_communities = set.union(all_players_in_communities, *comm[i])
-
-  if not set.issubset(all_players_in_communities, set.union(*all_players)):
-    errors_of_dataset["missing_players"] = set.difference(all_players_in_communities, set.union(*all_players))
-
-  return errors_of_dataset
-
-def correct_communities(communities : List[List[Set[int]]], graphs_attacks : List[ig.Graph], graphs_messages : List[ig.Graph], graphs_trades : List[ig.Graph]) -> None:
-  players_per_day = [get_all_nodes_from_all_type_graph(graphs_attacks[day], graphs_messages[day], graphs_trades[day]) for day in range(0, 30)]
-
-  errors = check_community_consistency(communities, players_per_day)
-
-  for day in range(0, len(communities)):
-    for i_community in range(len(communities[day])):
-      communities[day][i_community] = set.difference(communities[day][i_community], errors['missing_players'])
-
-def get_labels_of_communities(communities : List[List[Set[int]]]):
-  labels = []
-
-  for day in range(0, len(communities)):
-    for i in range(0, len(communities[day])):
-      labels.append("D_" + str(day) + "_C_" + str(i))
-
-  return labels
-
-def compute_link_for_sankey_diagram(communities : List[List[Set[int]]], community_labels : List[str]) -> dict:
-  link = {
-      "source":[],
-      "target":[],
-      "value":[],
-  }
-
-  for day in range(0, len(communities) - 1):
-    for i in range(0, len(communities[day])):
-        for j in range(0, len(communities[day + 1])):
-          #if i != j and set.intersection(communities[day][i], communities[day + 1][j]) != set():
-          if set.intersection(communities[day][i], communities[day + 1][j]) != set():
-            link["source"].append(community_labels.index("D_" + str(day) + "_C_" + str(i)))
-            link["target"].append(community_labels.index("D_" + str(day + 1) + "_C_" + str(j)))
-            link["value"].append(len(set.intersection(communities[day][i], communities[day + 1][j])))
-  return link
-
-
-def generate_sankey_diagram(communities : List[List[Set[int]]]):
-  labels = get_labels_of_communities(communities)
-
-  number_of_colors = len(labels)
-  color = ["#"+''.join([random.choice('0123456789ABCDEF') for j in range(6)])
-              for i in range(number_of_colors)]
-
-  fig = go.Figure(data=[go.Sankey(
-      node = dict(
-        pad = 15,
-        thickness = 20,
-        #line = dict(color = "black", width = 0.5),
-        label = labels,
-        color = color
-      ),
-      link = compute_link_for_sankey_diagram(communities, labels))])
-
-  fig.update_layout(title_text="Basic Sankey Diagram", font_size=10, width=1920, height=2000)
-  fig.show()
-
-
 def create_community_graph(communities :List[Set[int]],
                            graph : ig.Graph) -> ig.Graph:
 
@@ -189,7 +53,7 @@ def create_community_graph(communities :List[Set[int]],
   }
 
   for community in communities:
-    if set.intersection(community, player_verteces) != set():
+    # if set.intersection(community, player_verteces) != set():
       community_verteces["label"].append(community)
 
   cartesian_product_communities = product(community_verteces["label"], repeat=2)
@@ -214,6 +78,76 @@ def create_community_graph(communities :List[Set[int]],
                             vertices=pd.DataFrame.from_dict(community_verteces),
                             directed = True)
 
+def community_changes_btw_day(communities_actual: List[Set[int]], communities_succ: List[Set[int]]):
+  candidate = []
+  for idx_comm_t0 in range(len(communities_actual)):
+    score_total = 0
+    max_heap_score = []
+    for idx_comm_t1 in range(len(communities_succ)):
+      score = edit_distance_communities(communities_actual[idx_comm_t0], communities_succ[idx_comm_t1])
+      if score > 0:
+        max_heap_score.append((score, idx_comm_t0, idx_comm_t1))
+        score_total = score_total + score
+    if max_heap_score == []:
+      max_heap_score.append((0, idx_comm_t0, -1))
+    sorted(max_heap_score, key=lambda x: x[0], reverse=True)
+    candidate.append(max_heap_score)
+  return candidate
+  
+def community_map_indexing(communities : List[List[Set[int]]]) -> List[List[Tuple[float, int, int]]]:
+  candidate_communities = []
+  for day in range(len(communities) - 1):
+    candidate_communities.append(community_changes_btw_day(communities[day], 
+                                                           communities[day + 1]))
+
+  for i in range(len(candidate_communities)):
+    candidate_communities[i] = sorted(candidate_communities[i], reverse=True)
+
+  return candidate_communities
+
+def community_indexing(community : List[List[Set[int]]], map_index : List[List[Tuple[float, int, int]]]):
+  n_days = len(community)
+  max_n_communities_in_file = max([len(c) for c in community])
+  index = [[-1 for _ in range(n_days)] for _ in range(max_n_communities_in_file)]
+  
+  # first day
+  for i in range(len(GT_COMMUNITIES[0])):
+    index[i][0] = i
+  # other days
+  for day in range(n_days - 1):
+    for c in map_index[day]:
+      (score, prec, succ) = c[0]
+      if score == 1:
+        index[succ][day + 1] = index[prec][day]
+      elif score > 0.5:
+        index[succ][day + 1] = index[prec][day]
+      elif index[succ][day + 1] == -1:
+        index[succ][day + 1] = index[prec][day]
+  return index 
+
+"""
+def community_indexing(communities : List[List[Set[int]]]):
+  max_communities = len(communities[0])
+  candidate_communities = community_map_indexing(communities)
+  community_indexing = [list(range(len(communities[0])))]
+  for day in range(len(candidate_communities)):
+    max_communities += len(candidate_communities[day] - candidate_communities[day-1] + get_deleted_comm(candidate_communities[day-1]))
+    print(max_communities)
+    community_indexing_day = [''] * len(candidate_communities[day])
+    for comm_map in range(len(candidate_communities[day])):
+      conf = candidate_communities[day][comm_map][0][0]
+      if conf == 1:
+        community_indexing_day[candidate_communities[day][comm_map][0][1]] = candidate_communities[day][comm_map][0][2]
+    community_indexing.append(community_indexing_day)
+  return community_indexing
+"""
+def get_deleted_comm(candidate_communities):
+  deleted_comm = 0
+  for comm_map in candidate_communities:
+    if comm_map[0][2] == -1:
+      deleted_comm += 1
+  return deleted_comm
+
 def worker(communities, graphs, day, type):
   comm_graph = create_community_graph(communities[day], graphs[day])
   comm_graph.write('GRAPHS_COMM_' + type + '_' + str(day) + NAME_FILES['ext'], "graphml")
@@ -231,49 +165,13 @@ def create_community_graphs(communities : List[List[Set[int]]],
     graphs_communities_attacks = None
 
   return (graphs_communities_attacks, graphs_communities_messages, graphs_communities_trades)
-
-def check_communities_graph_consistency(community_graph : ig.Graph,
-                                        player_graph : ig.Graph) -> dict:
-  Error = {
-    'community_with_player_not_in_player_graph': [], # list of communities, each one has no players in player graph
-    'n_edges_in_community_and_in_graph': () # (total edges in community graph, total edges in player graph) must be equal
-  }
-
-  player_labels = [int(l) for l in player_graph.vs['label']]
-
-  for community_node in community_graph.vs['label']:
-    if set.intersection(eval(community_node), set(player_labels)) == set():
-      Error['community_with_player_not_in_player_graph'].append(eval(community_node))
-
-  total_edges_in_player_graph = 0
-  for player_edge in player_graph.es:
-    source_player = player_graph.vs[player_edge.source]
-    target_player = player_graph.vs[player_edge.target]
-    find_source = False
-    find_target = False
-    for community in community_graph.vs['label']:
-      set_community = eval(community)
-      if int(source_player['label']) in set_community:
-        find_source = True
-      if int(target_player['label']) in set_community:
-        find_target = True
-      if find_source and find_target:
-        total_edges_in_player_graph = total_edges_in_player_graph + player_edge['count_edge']
-        break
-
-  total_edges_in_comm_graph = sum(community_graph.es['n_interactions'])
-
-  Error['n_edges_missing_in_community_graph'] = (total_edges_in_comm_graph, total_edges_in_player_graph)
-  return Error
-
-
 # GLOBALS
 
 NAME_FILES = {
-    'attacks': 'data/attacks-timestamped-2009-12-',
-    'communities': 'data/communities-2009-12-',
-    'messages': 'data/messages-timestamped-2009-12-',
-    'trades': 'data/trades-timestamped-2009-12-',
+    'attacks': 'datasets/attacks-timestamped-2009-12-',
+    'communities': 'datasets/communities-2009-12-',
+    'messages': 'datasets/messages-timestamped-2009-12-',
+    'trades': 'datasets/trades-timestamped-2009-12-',
     'ext': '.graphml',
     'range_day': (1, 30)
 }
@@ -284,15 +182,15 @@ GRAPHS_TRADES = [] # GRAPHS_TRADES[0] = grafo dei trades al giorno 0
 GT_COMMUNITIES = [] # GT_COMMUNITIES[0][1] = insieme di id di nodi che fanno parte della community 1 al giorno 0
 
 for i in range(NAME_FILES['range_day'][0], NAME_FILES['range_day'][1] + 1):
-  GRAPHS_ATTACKS.append(ig.read(NAME_FILES['attacks'] + str(i) + NAME_FILES['ext'], format="graphml"))
-  GRAPHS_MESSAGES.append(ig.read(NAME_FILES['messages'] + str(i) + NAME_FILES['ext'], format="graphml"))
-  GRAPHS_TRADES.append(ig.read(NAME_FILES['trades'] + str(i) + NAME_FILES['ext'], format="graphml"))
+  # GRAPHS_ATTACKS.append(ig.read(NAME_FILES['attacks'] + str(i) + NAME_FILES['ext'], format="graphml"))
+  # GRAPHS_MESSAGES.append(ig.read(NAME_FILES['messages'] + str(i) + NAME_FILES['ext'], format="graphml"))
+  # GRAPHS_TRADES.append(ig.read(NAME_FILES['trades'] + str(i) + NAME_FILES['ext'], format="graphml"))
   GT_COMMUNITIES.append(read_gt_commiunities(NAME_FILES['communities'] + str(i) + '.txt'))
-
+"""
 GRAPHS_COMM_ATTACKS = []
 GRAPHS_COMM_MESSAGES = []
 GRAPHS_COMM_TRADES = []
-"""
+
 for day in range(len(GRAPHS_ATTACKS)):
     GRAPHS_ATTACKS[day] = correct_graph_inplace(GRAPHS_ATTACKS[day])
     GRAPHS_MESSAGES[day] = correct_graph_inplace(GRAPHS_MESSAGES[day])
@@ -309,40 +207,42 @@ with parallel_config(backend='threading', n_jobs=16):
 print("trades")
 with parallel_config(backend='threading', n_jobs=16):
     GRAPHS_COMM_TRADES = Parallel()(delayed(worker)(GT_COMMUNITIES, GRAPHS_TRADES, day, "TRADES") for day in range(len(GRAPHS_TRADES)))
-"""
+
 
 NAME_FILES_COMMUNITY = {
-    'path':  "./data/",
+    'path':  "./datasets/",
     'attacks': 'GRAPHS_COMM_ATTACKS_',
     'messages': 'GRAPHS_COMM_MESSAGES_',
     'trades': 'GRAPHS_COMM_TRADES_',
     'ext': '.graphml',
     'range_day': (0, 29)
 }
+"""
+"""
 
-COMM_GRAPHS_ATTACKS = [] # COMM_GRAPHS_ATTACKS[0] = grafo degli attacks tra communities al giorno 0
-COMM_GRAPHS_MESSAGES = [] # COMM_GRAPHS_MESSAGES[0] = grafo dei messages tra communities al giorno 0
-COMM_GRAPHS_TRADES = [] # COMM_GRAPHS_TRADES[0] = grafo dei trades tra communities al giorno 0
+first_days = 2
+comm_indexing = community_map_indexing(GT_COMMUNITIES)
+print(len(comm_indexing))
+for i in range(len(comm_indexing[:first_days])):
+  print("Day ", i, "to", i + 1)
+  print([t if t[0][0] != 1 else "" for t in comm_indexing[i]])
+  # print([t for t in comm_indexing[i]])
+  print("Len := ", len(comm_indexing[i]))
+  print()
+"""
 
-
-for day in range(len(GRAPHS_ATTACKS)):
-  GRAPHS_ATTACKS[day] = correct_graph_inplace(GRAPHS_ATTACKS[day])
-  GRAPHS_MESSAGES[day] = correct_graph_inplace(GRAPHS_MESSAGES[day])
-  GRAPHS_TRADES[day] = correct_graph_inplace(GRAPHS_TRADES[day])
-
-for i in range(NAME_FILES_COMMUNITY['range_day'][0], NAME_FILES_COMMUNITY['range_day'][1] + 1):
-  COMM_GRAPHS_ATTACKS.append(ig.read(NAME_FILES_COMMUNITY['path'] + NAME_FILES_COMMUNITY['attacks'] + str(i) + NAME_FILES_COMMUNITY['ext'], format="graphml"))
-  COMM_GRAPHS_MESSAGES.append(ig.read(NAME_FILES_COMMUNITY['path'] + NAME_FILES_COMMUNITY['messages'] + str(i) + NAME_FILES_COMMUNITY['ext'], format="graphml"))
-  COMM_GRAPHS_TRADES.append(ig.read(NAME_FILES_COMMUNITY['path'] + NAME_FILES_COMMUNITY['trades'] + str(i) + NAME_FILES_COMMUNITY['ext'], format="graphml"))
-  
-
-for day in range(len(COMM_GRAPHS_ATTACKS)):
-  err_attacks = check_communities_graph_consistency(COMM_GRAPHS_ATTACKS[day], GRAPHS_ATTACKS[day])
-  if err_attacks['community_with_player_not_in_player_graph'] != [] or err_attacks['n_edges_missing_in_community_graph'][0] - err_attacks['n_edges_missing_in_community_graph'][1] != 0:
-    print(err_attacks)
-  err_messages = check_communities_graph_consistency(COMM_GRAPHS_MESSAGES[day], GRAPHS_MESSAGES[day])
-  if err_messages['community_with_player_not_in_player_graph'] != [] or err_messages['n_edges_missing_in_community_graph'][0] - err_messages['n_edges_missing_in_community_graph'][1] != 0:
-    print(err_messages)
-  err_trades = check_communities_graph_consistency(COMM_GRAPHS_TRADES[day], GRAPHS_TRADES[day])
-  if err_trades['community_with_player_not_in_player_graph'] != [] or err_trades['n_edges_missing_in_community_graph'][0] - err_trades['n_edges_missing_in_community_graph'][1] != 0:
-    print(err_trades)
+index =  community_indexing(GT_COMMUNITIES, community_map_indexing(GT_COMMUNITIES))
+#print(index[:][:2])ù
+for i in range(len(index)):
+  strng = ""
+  for j in range(30):
+    strng = strng + str(index[i][j]) + ";"
+  print(i + 1, ";", strng)
+"""
+index = community_indexing(GT_COMMUNITIES)
+for i in range(len(index[:first_days])):
+  print("Index community day ", i)
+  print(index[i])
+  print(len(index[i]))
+  print()
+"""

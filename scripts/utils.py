@@ -1,7 +1,7 @@
 import igraph as ig
-from typing import List, Tuple
+from typing import List, Tuple, Set
 import base64
-
+import datetime
 
 def get_delta_degree_per_node(graph : ig.Graph, type_degree) -> List[int]:
   total_degree = []
@@ -26,15 +26,21 @@ def check_attributes_consistency(graph : ig.Graph, day : int) -> dict:
       "edgetime": set(), # set of edges with edgetime attribute different of the day
   }
   for v in graph.vs:
-      # if v["id"] != v["label"]:
-      #     Errors["id-label"].add(v)
+      if v["id"] != v["label"]:
+          Errors["id-label"].add(v)
       if v["indegree"] != v.indegree():
           Errors["indegree"].add((v.index, v.indegree(), v["indegree"]))
       if v["outdegree"] != v.outdegree():
           Errors["outdegree"].add((v.index, v.outdegree(), v["outdegree"]))
-      # for e in graph.es:
-      #     if e["edgelabel"] != '':
-      #         Errors["edgelabel"].add(e)
-      #     if datetime.utcfromtimestamp(e["edgetime"]).strftime('%Y-%m-%d') != datetime(2009, 12, day + 1).strftime('%Y-%m-%d'):
-      #         Errors["edgetime"].add(e)
+      for e in graph.es:
+          if e["edgelabel"] != '':
+              Errors["edgelabel"].add(e)
+          if datetime.utcfromtimestamp(e["edgetime"]).strftime('%Y-%m-%d') != datetime(2009, 12, day + 1).strftime('%Y-%m-%d'):
+              Errors["edgetime"].add(e)
   return Errors
+
+def edit_distance_communities(community_1 : Set[int], community_2 : Set[int]) -> List[List[int]]:    
+    card_tot = len(community_1) + len(community_2)
+    card_intersection = len(set.intersection(community_1, community_2))
+    #return (card_intersection * len(community_1) / card_tot + card_intersection * len(community_2) / card_tot ) / 2
+    return card_intersection / len(community_2)

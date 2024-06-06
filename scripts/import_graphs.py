@@ -27,7 +27,7 @@ def read_gt_commiunities(path : str = "communities-2009-12-1.txt") -> List[Set[i
         ris_nodes = set()
         for node in list_of_nodes:
             ris_nodes.add(int(node))
-            ris.append(ris_nodes)
+        ris.append(ris_nodes)
 
     return ris
 
