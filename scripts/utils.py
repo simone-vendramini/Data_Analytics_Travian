@@ -44,3 +44,8 @@ def edit_distance_communities(community_1 : Set[int], community_2 : Set[int]) ->
     card_intersection = len(set.intersection(community_1, community_2))
     #return (card_intersection * len(community_1) / card_tot + card_intersection * len(community_2) / card_tot ) / 2
     return card_intersection / len(community_2)
+
+def jaccard_distance_communities(community_1 : Set[int], community_2 : Set[int]) -> List[List[int]]:    
+    card_union = len(set.union(community_1, community_2))
+    card_intersection = len(set.intersection(community_1, community_2))
+    return card_intersection / card_union
