@@ -76,9 +76,10 @@ def create_community_graph(communities :List[Set[int]],
       community_edges['n_interactions'].append(count_interaction)
       community_edges['edge_sequence'].append(edges_from_player)
 
-
+  community_verteces['players'] = [str(label) for label in community_verteces['players']]
+  
   return ig.Graph.DataFrame(edges = pd.DataFrame.from_dict(community_edges),
-                            vertices=pd.DataFrame.from_dict(community_verteces),
+                            vertices = pd.DataFrame.from_dict(community_verteces),
                             directed = True)
 
 def community_changes_btw_day(communities_actual: List[Set[int]], communities_succ: List[Set[int]]):
@@ -162,7 +163,7 @@ def get_deleted_comm(candidate_communities):
 def worker(communities, graphs, day, type, index, pbar):
   column = [row[day] for row in index]
   comm_graph = create_community_graph(communities[day], column, graphs[day])
-  comm_graph.write('GRAPHS_COMM_' + type + '_' + str(day) + NAME_FILES['ext'], "graphml")
+  comm_graph.write('./GRAPHS_COMM_' + type + '_' + str(day) + NAME_FILES['ext'], "graphml")
   pbar.update(1)
   print("crated communities " + type + " graph of day " + str(day))
   return comm_graph
