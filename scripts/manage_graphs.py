@@ -38,18 +38,20 @@ def create_error_subgraph(graph : ig.Graph, day : int) -> Tuple[ig.Graph, dict, 
     sg.vs["true_label"] = sg.vs["label"]
 
     visual_style = {}
-    visual_style["edge_width"] = [2 if sg.vs[e.target]['label'] in labels_indegree and sg.vs[e.source]['label'] in labels_outdegree else
-                                    0.5 for
-                                    e in sg.es]
+
+    visual_style["edge_width"] = [3 if sg.vs[e.target]['label'] in labels_indegree and sg.vs[e.source]['label'] in labels_outdegree else
+                                  1 for e in sg.es]
 
     visual_style["edge_color"] = ["orange" if sg.vs[e.target]['label'] in labels_indegree and sg.vs[e.source]['label'] in labels_outdegree else
                                     "grey" for
                                     e in sg.es]
+    
     visual_style["vertex_color"] = ["skyblue" if label in labels_outdegree and label in labels_indegree else
                                     "lime" if label in labels_indegree else
-                                    "tomato" if label in labels_outdegree else
+                                    "red" if label in labels_outdegree else
                                     "grey" for
                                     label in sg.vs["label"]]
+    
     visual_style["bbox"] = (1920, 1080)
     visual_style["vertex_size"] = [ 20 if label in labels_indegree or label in labels_outdegree else
                                     10 for

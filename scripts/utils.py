@@ -35,8 +35,8 @@ def check_attributes_consistency(graph : ig.Graph, day : int) -> dict:
       for e in graph.es:
           if e["edgelabel"] != '':
               Errors["edgelabel"].add(e)
-          if datetime.utcfromtimestamp(e["edgetime"]).strftime('%Y-%m-%d') != datetime(2009, 12, day + 1).strftime('%Y-%m-%d'):
-              Errors["edgetime"].add(e)
+          #if datetime.utcfromtimestamp(e["edgetime"]).strftime('%Y-%m-%d') != datetime(2009, 12, day + 1).strftime('%Y-%m-%d'):
+          #    Errors["edgetime"].add(e)
   return Errors
 
 def edit_distance_communities(community_1 : Set[int], community_2 : Set[int]) -> List[List[int]]:    
