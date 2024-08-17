@@ -13,7 +13,6 @@ import plotly.graph_objs as go
 from import_graphs import *
 from utils import *
 from manage_graphs import *
-from plot_networks import *
 
 
 
@@ -105,8 +104,7 @@ app.layout = html.Div(children=[
                 marks={i: str(i) for i in range(1, 31)},
                 step=1
             ),
-            dcc.Graph(id='2-output-image'),
-            #html.Img(id='2-output-image', src=encode_image('./img/graph_degree.png'), style={'maxWidth': '100%', 'maxHeight': '100%', 'width': 'auto', 'height': 'auto'}),
+            html.Img(id='2-output-image', src=encode_image('./img/graph_degree.png'), style={'maxWidth': '100%', 'maxHeight': '100%', 'width': 'auto', 'height': 'auto'}),
         ], style={
             'border': '2px solid darkslategray',
             'padding': '10px',
@@ -170,7 +168,7 @@ def display_hover_data(hoverData):
     return f"Ci sono {value} nodi con una differenza di {category} gradi rispetto alle informazioni fornite."
 
 @app.callback(
-    Output('2-output-image', 'figure'),
+    Output('2-output-image', 'src'),
     Input('2-type-graph-dropdown', 'value'),
     Input('2-day-slider', 'value'),
 )
@@ -180,12 +178,11 @@ def update_image(value, day):
         g, visual_style, error = create_error_subgraph(GRAPHS_ATTACKS[day], day)
     else:
         g, visual_style, error = create_error_subgraph(GRAPHS_TRADES[day], day)
-    #create_img_error_subgraph((g, visual_style, error))
-    print(g.summary())
-    return generate_figure(g, visual_style)
+    create_img_error_subgraph((g, visual_style, error))
+    return encode_image('./img/graph_degree.png')
 
 if __name__ == '__main__':
-    app.run_server(debug=True) 
+    app.run_server(debug=True)
 
 
 #connecs to http://127.0.0.1:8050/

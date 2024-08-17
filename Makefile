@@ -8,6 +8,3 @@ install-dipendences : enter-env
 
 create-communities : enter-env
 	python ./scripts/create_communities.py
-
-run-dash : enter-env
-	python ./scripts/dashboard.py
