@@ -182,7 +182,7 @@ def update_image(value, day):
         g, visual_style, error = create_error_subgraph(GRAPHS_TRADES[day], day)
     #create_img_error_subgraph((g, visual_style, error))
     print(g.summary())
-    return generate_figure(g, visual_style)
+    return generate_figure(g, visual_style, 'cacca')
 
 if __name__ == '__main__':
     app.run_server(debug=True) 
