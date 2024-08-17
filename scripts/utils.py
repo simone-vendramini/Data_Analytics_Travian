@@ -1,7 +1,7 @@
 import igraph as ig
 from typing import List, Tuple, Set
 import base64
-import datetime
+from datetime import datetime
 
 def get_delta_degree_per_node(graph : ig.Graph, type_degree) -> List[int]:
   total_degree = []
@@ -32,11 +32,11 @@ def check_attributes_consistency(graph : ig.Graph, day : int) -> dict:
           Errors["indegree"].add((v.index, v.indegree(), v["indegree"]))
       if v["outdegree"] != v.outdegree():
           Errors["outdegree"].add((v.index, v.outdegree(), v["outdegree"]))
-      for e in graph.es:
-          if e["edgelabel"] != '':
-              Errors["edgelabel"].add(e)
-          #if datetime.utcfromtimestamp(e["edgetime"]).strftime('%Y-%m-%d') != datetime(2009, 12, day + 1).strftime('%Y-%m-%d'):
-          #    Errors["edgetime"].add(e)
+    #   for e in graph.es:
+    #       if e["edgelabel"] != '':
+    #           Errors["edgelabel"].add(e)
+    #       if datetime.utcfromtimestamp(e["edgetime"]).strftime('%Y-%m-%d') != datetime(2009, 12, day + 1).strftime('%Y-%m-%d'):
+    #           Errors["edgetime"].add(e)
   return Errors
 
 def edit_distance_communities(community_1 : Set[int], community_2 : Set[int]) -> List[List[int]]:    
