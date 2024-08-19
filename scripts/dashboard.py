@@ -11,6 +11,7 @@ from dash.dependencies import Input, Output
 import plotly.graph_objs as go
 
 from import_graphs import *
+from plot_sankey import plot_sankey_diagram
 from utils import *
 from manage_graphs import *
 from plot_networks import *
@@ -107,6 +108,21 @@ app.layout = html.Div(children=[
             ),
             dcc.Graph(id='2-output-image'),
             #html.Img(id='2-output-image', src=encode_image('./img/graph_degree.png'), style={'maxWidth': '100%', 'maxHeight': '100%', 'width': 'auto', 'height': 'auto'}),
+        ], style={
+            'border': '2px solid darkslategray',
+            'padding': '10px',
+            'margin': '10px',
+            'border-radius': '15px'
+            }),
+
+        html.Div(['Sankey Diagrams'], style={'text-align': 'center', 'textColor': 'darkslategray', 'fontSize': 20, 'margin': '10px'}),
+        html.Div([
+            dcc.Graph(figure=plot_sankey_diagram(read_all_communities_graphs()[0], 30, 0, 5)),
+            dcc.Graph(figure=plot_sankey_diagram(read_all_communities_graphs()[0], 30, 5, 10)),
+            dcc.Graph(figure=plot_sankey_diagram(read_all_communities_graphs()[0], 30, 10, 15)),
+            dcc.Graph(figure=plot_sankey_diagram(read_all_communities_graphs()[0], 30, 15, 20)),
+            dcc.Graph(figure=plot_sankey_diagram(read_all_communities_graphs()[0], 30, 20, 25)),
+            dcc.Graph(figure=plot_sankey_diagram(read_all_communities_graphs()[0], 30, 25, 29)),
         ], style={
             'border': '2px solid darkslategray',
             'padding': '10px',
