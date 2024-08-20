@@ -117,12 +117,43 @@ app.layout = html.Div(children=[
 
         html.Div(['Sankey Diagrams'], style={'text-align': 'center', 'textColor': 'darkslategray', 'fontSize': 20, 'margin': '10px'}),
         html.Div([
-            dcc.Graph(figure=plot_sankey_diagram(read_all_communities_graphs()[0], 30, 0, 5)),
-            dcc.Graph(figure=plot_sankey_diagram(read_all_communities_graphs()[0], 30, 5, 10)),
-            dcc.Graph(figure=plot_sankey_diagram(read_all_communities_graphs()[0], 30, 10, 15)),
-            dcc.Graph(figure=plot_sankey_diagram(read_all_communities_graphs()[0], 30, 15, 20)),
-            dcc.Graph(figure=plot_sankey_diagram(read_all_communities_graphs()[0], 30, 20, 25)),
-            dcc.Graph(figure=plot_sankey_diagram(read_all_communities_graphs()[0], 30, 25, 29)),
+            html.Div([
+                html.Div(children='Seleziona l\'intervallo di tempo', style={'text-align': 'center'}),
+                html.Div([
+                    html.Div(children='Inizio', style={'text-align': 'center'}),
+                    dcc.Dropdown(
+                        id='start-interval-time-sankey',
+                        options=[
+                            {'label': str(i), 'value': i} for i in range(0, 30, 1)
+                        ],
+                        value='outdegree',
+                        style={'width': '100%'},
+                        clearable=False
+                    ),
+                ], style={'width': '48%', 'display': 'inline-block'}),
+                html.Div([
+                    html.Div(children='Fine', style={'text-align': 'center'}),
+                    dcc.Dropdown(
+                        id='end-interval-time-sankey',
+                        options=[
+                            {'label': str(i), 'value': i} for i in range(0, 30, 1)
+                        ],
+                        value='attack',
+                        style={'width': '100%'},
+                        clearable=False
+                    ),
+                ], style={'width': '48%', 'display': 'inline-block', 'marginLeft': '4%'}),
+            ], style={'text-align': 'center'}),
+            html.Div(children='Seleziona la threshold di selezione delle community', style={'text-align': 'center'}),
+            dcc.Slider(
+                id='sankey-threshold',
+                min=0,
+                max=61,
+                value=10,
+                marks={i: str(i) for i in range(0, 61, 5)},
+                step=5
+            ),
+            dcc.Graph(id='sankey'),
         ], style={
             'border': '2px solid darkslategray',
             'padding': '10px',
@@ -199,6 +230,24 @@ def update_image(value, day):
     #create_img_error_subgraph((g, visual_style, error))
     print(g.summary())
     return generate_figure(g, visual_style, 'cacca')
+
+@app.callback(
+    Output('sankey', 'figure'),
+    Input('start-interval-time-sankey', 'value'),
+    Input('end-interval-time-sankey', 'value'),
+    Input('sankey-threshold', 'value'),
+)
+def update_sankey(start, end, threshold):
+    if start == None:
+        start = 0
+    if end == None or start > end:
+        end = start + 1
+
+    if start < end:
+        return plot_sankey_diagram(read_all_communities_graphs()[0], threshold, start, end)
+    else:
+        return plot_sankey_diagram(read_all_communities_graphs()[0], start, start + 5, end)
+
 
 if __name__ == '__main__':
     app.run_server(debug=True) 

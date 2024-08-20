@@ -83,5 +83,5 @@ def plot_sankey_diagram(communities_graphs: list[ig.Graph], threshold, start, en
     ),
     link = links)])
 
-  fig.update_layout(title_text="Basic Sankey Diagram", font_size=10, width=1920, height=2000)
+  fig.update_layout(font_size=10, height=1000)
   return fig
