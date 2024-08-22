@@ -50,22 +50,6 @@ def jaccard_distance_communities(community_1 : Set[int], community_2 : Set[int])
     card_intersection = len(set.intersection(community_1, community_2))
     return card_intersection / card_union
 
-def read_all_communities_graphs():
-    NAME_FILES_COMMUNITY = {
-        'path':  "./datasets/",
-        'attacks': 'GRAPHS_COMM_ATTACKS_',
-        'messages': 'GRAPHS_COMM_MESSAGES_',
-        'trades': 'GRAPHS_COMM_TRADES_',
-        'ext': '.graphml',
-        'range_day': (0, 29)
-    }
-
-    COMM_GRAPHS_ATTACKS = []
-    COMM_GRAPHS_MESSAGES = [] 
-    COMM_GRAPHS_TRADES = []
-    for i in range(NAME_FILES_COMMUNITY['range_day'][0], NAME_FILES_COMMUNITY['range_day'][1] + 1):
-        COMM_GRAPHS_ATTACKS.append(ig.read(NAME_FILES_COMMUNITY['path'] + NAME_FILES_COMMUNITY['attacks'] + str(i) + NAME_FILES_COMMUNITY['ext'], format="graphml"))
-        COMM_GRAPHS_MESSAGES.append(ig.read(NAME_FILES_COMMUNITY['path'] + NAME_FILES_COMMUNITY['messages'] + str(i) + NAME_FILES_COMMUNITY['ext'], format="graphml"))
-        COMM_GRAPHS_TRADES.append(ig.read(NAME_FILES_COMMUNITY['path'] + NAME_FILES_COMMUNITY['trades'] + str(i) + NAME_FILES_COMMUNITY['ext'], format="graphml"))
-
-    return (COMM_GRAPHS_ATTACKS, COMM_GRAPHS_MESSAGES, COMM_GRAPHS_TRADES)
+def player_parser(str_players):
+  strings_list = str_players.strip("{}").split(", ")
+  return strings_list

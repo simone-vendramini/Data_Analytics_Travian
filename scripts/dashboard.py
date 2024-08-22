@@ -14,6 +14,7 @@ from import_graphs import *
 from plot_sankey import plot_sankey_diagram
 from utils import *
 from manage_graphs import *
+from plot_networks import *
 
 
 
@@ -105,6 +106,7 @@ app.layout = html.Div(children=[
                 marks={i: str(i) for i in range(1, 31)},
                 step=1
             ),
+            dcc.Graph(id='2-output-image')
         ], style={
             'border': '2px solid darkslategray',
             'padding': '10px',
@@ -151,7 +153,6 @@ app.layout = html.Div(children=[
                 step=5
             ),
             dcc.Graph(id='sankey'),
-            html.Img(id='2-output-image', src=encode_image('./img/graph_degree.png'), style={'maxWidth': '100%', 'maxHeight': '100%', 'width': 'auto', 'height': 'auto'}),
         ], style={
             'border': '2px solid darkslategray',
             'padding': '10px',
@@ -215,7 +216,7 @@ def display_hover_data(hoverData):
     return f"Ci sono {value} nodi con una differenza di {category} gradi rispetto alle informazioni fornite."
 
 @app.callback(
-    Output('2-output-image', 'src'),
+    Output('2-output-image', 'figure'),
     Input('2-type-graph-dropdown', 'value'),
     Input('2-day-slider', 'value'),
 )
@@ -226,8 +227,7 @@ def update_image(value, day):
     else:
         g, visual_style, error = create_error_subgraph(GRAPHS_TRADES[day], day)
     #create_img_error_subgraph((g, visual_style, error))
-    print(g.summary())
-    return generate_figure(g, visual_style, 'cacca')
+    return generate_figure(g, visual_style, f"Grafico {value} giorno {day}")
 
 @app.callback(
     Output('sankey', 'figure'),
@@ -236,9 +236,9 @@ def update_image(value, day):
     Input('sankey-threshold', 'value'),
 )
 def update_sankey(start, end, threshold):
-    if start == None:
+    if type(start) != int:
         start = 0
-    if end == None or start > end:
+    if type(end) != int or start > end:
         end = start + 1
 
     if start < end:
