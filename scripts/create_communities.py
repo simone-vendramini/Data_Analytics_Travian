@@ -245,7 +245,6 @@ NAME_FILES_COMMUNITY = {
     'range_day': (0, 29)
 }
 
-"""
 
 first_days = 2
 comm_indexing = community_map_indexing(GT_COMMUNITIES)
@@ -256,6 +255,5 @@ for i in range(len(comm_indexing[:first_days])):
   # print([t for t in comm_indexing[i]])
   print("Len := ", len(comm_indexing[i]))
   print()
-"""
 
 
