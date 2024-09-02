@@ -9,6 +9,7 @@ import pandas as pd
 import plotly.express as px
 from dash.dependencies import Input, Output
 import plotly.graph_objs as go
+import dash_bootstrap_components as dbc
 
 from import_graphs import *
 from plot_sankey import plot_sankey_diagram
@@ -21,17 +22,27 @@ from plot_networks import *
 # Load the graphs
 get_graphs()
 
-external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css'] #default
+external_stylesheets = [dbc.themes.BOOTSTRAP]
 
-app = dash.Dash(__name__, external_stylesheets=external_stylesheets) #default
+app = dash.Dash(__name__, external_stylesheets=external_stylesheets, suppress_callback_exceptions=True)
 
+navbar = dbc.NavbarSimple(
+    children=[
+        dbc.NavItem(dbc.NavLink("Studio consistenza", href="/")),
+        dbc.NavItem(dbc.NavLink("Flusso player", href="/page-1")),
+        dbc.NavItem(dbc.NavLink("Page 2", href="/page-2")),
+    ],
+    brand="Travian Dashboard",
+    brand_href="/",
+    color="primary",
+    dark=True,
+)
 
-app.layout = html.Div(children=[
-    html.H1(children='Travian Dashboard'),
-    html.Div([
-
-        html.Div(['Istogramma differenze dei gradi dei nodi calcolato e fornito'], style={'text-align': 'center', 'textColor': 'darkslategray', 'fontSize': 20, 'margin': '10px'}),
-        html.Div([
+istogrammaConsistenze = html.Div(children=[
+    html.Div('Istogramma differenze dei gradi dei nodi calcolato e fornito',
+             style={'text-align': 'center', 'color': 'darkslategray', 'fontSize': 20, 'margin': '10px'}),
+    dbc.Card(
+        dbc.CardBody([
             html.Div([
                 html.Div([
                     dcc.Dropdown(
@@ -45,6 +56,7 @@ app.layout = html.Div(children=[
                         clearable=False
                     ),
                 ], style={'width': '48%', 'display': 'inline-block'}),
+                
                 html.Div([
                     dcc.Dropdown(
                         id='1-type-graph-dropdown',
@@ -59,7 +71,9 @@ app.layout = html.Div(children=[
                     ),
                 ], style={'width': '48%', 'display': 'inline-block', 'marginLeft': '4%'}),
             ], style={'text-align': 'center'}),
+            
             html.Div(children='Selezione giorno', style={'text-align': 'center'}),
+            
             dcc.Slider(
                 id='1-day-slider',
                 min=1,
@@ -68,21 +82,28 @@ app.layout = html.Div(children=[
                 marks={i: str(i) for i in range(1, 31)},
                 step=1
             ),
+            
             dcc.Graph(id='1-histogram-graph'),
+            
             html.Div(
                 id='1-hover-data',
                 style={'padding': '10px', 'margin': '10px', 'text-align': 'center'}
             )
-        ], style={
-            'border': '2px solid darkslategray',
+        ]),
+        style={
             'padding': '10px',
             'margin': '10px',
             'border-radius': '15px'
-            }),
+        },
+    )
+])
 
-
-        html.Div(['Sottografi indegree/outdegree sbagliati'], style={'text-align': 'center', 'textColor': 'darkslategray', 'fontSize': 20, 'margin': '10px'}),
-        html.Div([
+sottografoInOutDegreeSbagliati = html.Div(children=[
+    html.Div(
+        'Sottografi indegree/outdegree sbagliati',
+        style={'textAlign': 'center', 'color': 'darkslategray', 'fontSize': 20, 'margin': '10px'}),
+    dbc.Card(
+        dbc.CardBody([
             html.Div([
                 html.Div([
                     dcc.Dropdown(
@@ -96,8 +117,10 @@ app.layout = html.Div(children=[
                         clearable=False
                     ),
                 ], style={'width': '48%', 'display': 'inline-block', 'marginLeft': '4%'}),
-            ], style={'text-align': 'center'}),
-            html.Div(children='Selezione giorno', style={'text-align': 'center'}),
+            ], style={'textAlign': 'center'}),
+
+            html.Div(children='Selezione giorno', style={'textAlign': 'center'}),
+
             dcc.Slider(
                 id='2-day-slider',
                 min=1,
@@ -106,16 +129,26 @@ app.layout = html.Div(children=[
                 marks={i: str(i) for i in range(1, 31)},
                 step=1
             ),
+
             dcc.Graph(id='2-output-image')
-        ], style={
-            'border': '2px solid darkslategray',
+        ]),
+        style={
             'padding': '10px',
             'margin': '10px',
             'border-radius': '15px'
-            }),
+        }
+    )
+])
 
-        html.Div(['Sankey Diagrams'], style={'text-align': 'center', 'textColor': 'darkslategray', 'fontSize': 20, 'margin': '10px'}),
-        html.Div([
+consistenze = html.Div(children=[
+    istogrammaConsistenze,
+    sottografoInOutDegreeSbagliati
+])
+
+sankey = html.Div(children=[
+    html.Div(['Sankey Diagrams'], style={'text-align': 'center', 'textColor': 'darkslategray', 'fontSize': 20, 'margin': '10px'}),
+    dbc.Card(
+        dbc.CardBody([
             html.Div([
                 html.Div(children='Seleziona l\'intervallo di tempo', style={'text-align': 'center'}),
                 html.Div([
@@ -125,7 +158,7 @@ app.layout = html.Div(children=[
                         options=[
                             {'label': str(i), 'value': i} for i in range(0, 30, 1)
                         ],
-                        value='outdegree',
+                        value=0,
                         style={'width': '100%'},
                         clearable=False
                     ),
@@ -137,7 +170,7 @@ app.layout = html.Div(children=[
                         options=[
                             {'label': str(i), 'value': i} for i in range(0, 30, 1)
                         ],
-                        value='attack',
+                        value=5,
                         style={'width': '100%'},
                         clearable=False
                     ),
@@ -148,20 +181,40 @@ app.layout = html.Div(children=[
                 id='sankey-threshold',
                 min=0,
                 max=61,
-                value=10,
+                value=45,
                 marks={i: str(i) for i in range(0, 61, 5)},
                 step=5
             ),
             dcc.Graph(id='sankey'),
         ], style={
-            'border': '2px solid darkslategray',
             'padding': '10px',
             'margin': '10px',
             'border-radius': '15px'
             })
+    )
+])
+
+app.layout = html.Div(children=[
+
+    dcc.Location(id='url', refresh=False),
+    navbar,
+    html.Div([
+        html.Div(id='page-content'),
     ], style={'width': '80%', 'margin': 'auto'})
 
 ])
+
+@app.callback(
+    dash.dependencies.Output('page-content', 'children'),
+    [dash.dependencies.Input('url', 'pathname')]
+)
+def display_page(pathname):
+    if pathname == '/page-1':
+        return sankey
+    elif pathname == '/page-2':
+        return html.H1("Benvenuto nella Pagina 2")
+    else:
+        return consistenze
 
 @app.callback(
     Output('1-histogram-graph', 'figure'),
