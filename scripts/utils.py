@@ -2,6 +2,7 @@ import igraph as ig
 from typing import List, Tuple, Set
 import base64
 from datetime import datetime
+from collections import Counter
 
 def get_delta_degree_per_node(graph : ig.Graph, type_degree) -> List[int]:
   total_degree = []

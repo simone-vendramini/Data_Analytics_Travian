@@ -61,6 +61,20 @@ get_graphs()
 #Load the communities graphs
 read_all_communities_graphs()
 
+types_interaction = ['attack', 'trade', 'message']
+
+for el in types_interaction:
+  for day in range(len(GRAPHS_ATTACKS)):
+    if el == 'attack':
+      for v in COMM_GRAPHS_ATTACKS[day].vs:
+        v['players'] = player_parser(v['players'])
+    if el == 'trade':
+      for v in COMM_GRAPHS_TRADES[day].vs:
+        v['players'] = player_parser(v['players'])
+    if el == 'message':
+      for v in COMM_GRAPHS_MESSAGES[day].vs:
+        v['players'] = player_parser(v['players'])
+
 for day in range(len(GRAPHS_ATTACKS)):
     graph = (create_union_graph(COMM_GRAPHS_ATTACKS[day], GRAPHS_ATTACKS[day], GRAPHS_MESSAGES[day], GRAPHS_TRADES[day]))
     graph.save('union_graph_' + str(day) + '.graphml', format='graphml')

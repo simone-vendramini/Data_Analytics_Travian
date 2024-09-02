@@ -6,6 +6,7 @@ NAME_FILES = {
     'communities': './datasets/communities-2009-12-',
     'messages': './datasets/messages-timestamped-2009-12-',
     'trades': './datasets/trades-timestamped-2009-12-',
+    'union': './datasets/union_graph_',
     'ext': '.graphml',
     'range_day': (1, 30)
 }
@@ -26,6 +27,7 @@ GT_COMMUNITIES = [] # GT_COMMUNITIES[0][1] = insieme di id di nodi che fanno par
 COMM_GRAPHS_ATTACKS = []
 COMM_GRAPHS_MESSAGES = [] 
 COMM_GRAPHS_TRADES = []
+PLAYERS_UNION_GRAPHS = []
 
 def read_gt_commiunities(path : str = "communities-2009-12-1.txt") -> List[Set[int]]:
     file = open(path, "r")
@@ -48,6 +50,7 @@ def get_graphs():
         GRAPHS_ATTACKS.append(ig.read(NAME_FILES['attacks'] + str(i) + NAME_FILES['ext'], format="graphml"))
         GRAPHS_MESSAGES.append(ig.read(NAME_FILES['messages'] + str(i) + NAME_FILES['ext'], format="graphml"))
         GRAPHS_TRADES.append(ig.read(NAME_FILES['trades'] + str(i) + NAME_FILES['ext'], format="graphml"))
+        PLAYERS_UNION_GRAPHS.append(ig.read(NAME_FILES['union'] + str(i-1) + NAME_FILES['ext'], format="graphml"))
     return GRAPHS_ATTACKS, GRAPHS_MESSAGES, GRAPHS_TRADES
 
 def get_communities():
