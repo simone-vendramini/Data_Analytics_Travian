@@ -16,8 +16,8 @@ from plot_sankey import plot_sankey_diagram
 from utils import *
 from manage_graphs import *
 from plot_networks import *
-
-
+from plot_comm_player_interactions import *
+from plot_comm_interactions import *
 
 # Load the graphs
 get_graphs()
@@ -30,7 +30,7 @@ navbar = dbc.NavbarSimple(
     children=[
         dbc.NavItem(dbc.NavLink("Studio consistenza", href="/")),
         dbc.NavItem(dbc.NavLink("Flusso player", href="/page-1")),
-        dbc.NavItem(dbc.NavLink("Page 2", href="/page-2")),
+        dbc.NavItem(dbc.NavLink("Relazioni tra alleanze", href="/page-2")),
     ],
     brand="Travian Dashboard",
     brand_href="/",
@@ -130,7 +130,7 @@ sottografoInOutDegreeSbagliati = html.Div(children=[
                 step=1
             ),
 
-            dcc.Graph(id='2-output-image')
+            html.Img(id='2-output-image', src=encode_image('./img/graph_degree.png'), style={'maxWidth': '100%', 'maxHeight': '100%', 'width': 'auto', 'height': 'auto'}),
         ]),
         style={
             'padding': '10px',
@@ -194,6 +194,98 @@ sankey = html.Div(children=[
     )
 ])
 
+grafo_community = html.Div(children=[
+    html.Div(
+        'Sottografo interazioni tra i player di due alleanze',
+        style={'textAlign': 'center', 'color': 'darkslategray', 'fontSize': 20, 'margin': '10px'}),
+    dbc.Card(
+        dbc.CardBody([
+            html.Div([
+                dcc.Input(
+                    id='comm',
+                    type='text',
+                    value='35',
+                    placeholder='Inserisci la prima alleanza',
+                    style={'marginRight': '10px',
+                                'width': '40%',
+                                'padding': '10px'}
+                )
+            ], style={'textAlign': 'center'}),
+
+            html.Div(children='Selezione giorno', style={'textAlign': 'center'}),
+
+            dcc.Slider(
+                id='1-day-slider',
+                min=1,
+                max=30,
+                value=10,
+                marks={i: str(i) for i in range(1, 31)},
+                step=1
+            ),
+
+            html.Img(id='image-community', src=encode_image('./img/community.png'), style={'maxWidth': '100%', 'maxHeight': '100%', 'width': 'auto', 'height': 'auto'}),
+        ]),
+        style={
+            'padding': '10px',
+            'margin': '10px',
+            'border-radius': '15px'
+        }
+    )
+])
+
+grafo_player_player = html.Div(children=[
+    html.Div(
+        'Sottografo interazioni tra i player di due alleanze',
+        style={'textAlign': 'center', 'color': 'darkslategray', 'fontSize': 20, 'margin': '10px'}),
+    dbc.Card(
+        dbc.CardBody([
+            html.Div([
+                dcc.Input(
+                    id='comm1',
+                    type='text',
+                    value='35',
+                    placeholder='Inserisci la prima alleanza',
+                    style={'marginRight': '10px',
+                                'width': '40%',
+                                'padding': '10px'}
+                ), 
+                dcc.Input(
+                    id='comm2',
+                    type='text',
+                    value='8',
+                    placeholder='Inserisci la seconda alleanza',
+                    style={'marginLeft': '10px',
+                                'width': '40%',
+                                'padding': '10px'}
+                ) 
+            ], style={'textAlign': 'center'}),
+
+            html.Div(children='Selezione giorno', style={'textAlign': 'center'}),
+
+            dcc.Slider(
+                id='2-day-slider',
+                min=1,
+                max=30,
+                value=10,
+                marks={i: str(i) for i in range(1, 31)},
+                step=1
+            ),
+
+            html.Img(id='image-player-player', src=encode_image('./img/player-player.png'), style={'maxWidth': '100%', 'maxHeight': '100%', 'width': 'auto', 'height': 'auto'}),
+        ]),
+        style={
+            'padding': '10px',
+            'margin': '10px',
+            'border-radius': '15px'
+        }
+    )
+])
+
+alleanze = html.Div(children=[
+    grafo_community,
+    grafo_player_player
+])
+
 app.layout = html.Div(children=[
 
     dcc.Location(id='url', refresh=False),
@@ -212,7 +304,7 @@ def display_page(pathname):
     if pathname == '/page-1':
         return sankey
     elif pathname == '/page-2':
-        return html.H1("Benvenuto nella Pagina 2")
+        return alleanze
     else:
         return consistenze
 
@@ -269,7 +361,7 @@ def display_hover_data(hoverData):
     return f"Ci sono {value} nodi con una differenza di {category} gradi rispetto alle informazioni fornite."
 
 @app.callback(
-    Output('2-output-image', 'figure'),
+    Output('2-output-image', 'src'),
     Input('2-type-graph-dropdown', 'value'),
     Input('2-day-slider', 'value'),
 )
@@ -279,8 +371,8 @@ def update_image(value, day):
         g, visual_style, error = create_error_subgraph(GRAPHS_ATTACKS[day], day)
     else:
         g, visual_style, error = create_error_subgraph(GRAPHS_TRADES[day], day)
-    #create_img_error_subgraph((g, visual_style, error))
-    return generate_figure(g, visual_style, f"Grafico {value} giorno {day}")
+    create_img_error_subgraph((g, visual_style, error))
+    return encode_image('./img/graph_degree.png')
 
 @app.callback(
     Output('sankey', 'figure'),
@@ -299,9 +391,29 @@ def update_sankey(start, end, threshold):
     else:
         return plot_sankey_diagram(read_all_communities_graphs()[0], start, start + 5, end)
 
+@app.callback(
+    Output('image-community', 'src'),
+    Input('1-day-slider', 'value'),
+    Input('comm', 'value'),
+)
+def update_image(day, comm):
+    day -= 1
+    plot_relation_and_interaction(day, int(comm))
+    return encode_image('./img/community.png')
+
+@app.callback(
+    Output('image-player-player', 'src'),
+    Input('2-day-slider', 'value'),
+    Input('comm1', 'value'),
+    Input('comm2', 'value'),
+)
+def update_image(day, comm1, comm2):
+    day -= 1
+    get_subgraph_interaction_communities_2_with_legend(day, comm1, comm2)
+    return encode_image('./img/player-player.png')
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(debug=False)
 
 
 #connecs to http://127.0.0.1:8050/

@@ -1,15 +1,5 @@
 import igraph as ig
-import pandas as pd
-import numpy as np
-from typing import List, Set, Tuple
-from datetime import datetime
-from itertools import permutations, product
-from collections import Counter
-import matplotlib.pyplot as plt
-import io
-from matplotlib.lines import Line2D
 from import_graphs import *
-from plot_sankey import plot_sankey_diagram
 from utils import *
 from manage_graphs import *
 

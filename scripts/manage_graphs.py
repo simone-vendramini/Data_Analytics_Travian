@@ -86,3 +86,4 @@ def create_img_error_subgraph(cons):
     plt.imshow(img)
     plt.axis('off')
     plt.savefig('./img/graph_degree.png', bbox_inches='tight')
+    plt.close(fig)

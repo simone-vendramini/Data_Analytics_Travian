@@ -44,23 +44,41 @@ def get_subgraph_interaction_communities_2(graph, comm1, comm2):
                                 0.5 for
                                 e in sg.es]
 
-  visual_style["edge_color"] = ['#3e8a2f' if type_edge == 'trade' else
-                              'grey' if type_edge == 'message' else
-                              'tomato' for type_edge in sg.es['type']]
+  visual_style["edge_color"] = ['#3e8a2f' if e['type'] == 'trade' else
+                                'SkyBlue' if e['type'] == 'message' and
+                                            (sg.vs[e.source]['label'] == comm1 and sg.vs[e.target]['label'] == comm2 or
+                                            sg.vs[e.source]['label'] == comm2 and sg.vs[e.target]['label'] == comm1) else
+                              'grey' if e['type'] == 'message' else
+                              'tomato' for e in sg.es]
 
   visual_style["vertex_color"] = ["Orchid" if label == comm1 else
                                   "SteelBlue" for
                                   label in sg.vs["label"]]
-  # visual_style["bbox"] = (1920, 1080)
+  visual_style["bbox"] = (1280, 720)
   visual_style["edge_arrow_size"] = [1 if sg.vs[e.target]['label'] == comm1 and sg.vs[e.source]['label'] == comm2 or sg.vs[e.target]['label'] == comm2 and sg.vs[e.source]['label'] == comm1 else
                                       0.5 for
                                       e in sg.es]
-  visual_style["layout"] = sg.layout_kamada_kawai()
+  visual_style["layout"] = sg.layout_fruchterman_reingold()
 
   return sg, visual_style
 
-get_graphs()
+def get_subgraph_interaction_communities_2_with_legend(day, comm1, comm2):
 
-sg, visual_style = get_subgraph_interaction_communities_2(PLAYERS_UNION_GRAPHS[9], '35', '8')
+  sg, visual_style = get_subgraph_interaction_communities_2(PLAYERS_UNION_GRAPHS[day], comm1, comm2)
+  ig.plot(sg, **visual_style, target = "./img/tmp3.png")
 
-ig.plot(sg, **visual_style, target="./tmp.png")
+  colors = ["Orchid", "SteelBlue", 'tomato', '#3e8a2f', 'grey', 'SkyBlue']
+  color_names = [f'Community {comm1}', f'Community {comm2}', 'Attacchi', 'Trade', 'Messaggi interni', 'Messaggi esterni']
+
+  legend_handles = [
+      Line2D([0], [0], color=color, lw=0, marker='o', label=name) for color, name in zip(colors, color_names)
+  ]
+
+  fig, axs = plt.subplots(figsize=(20, 12))
+
+  img = plt.imread('./img/tmp3.png')
+  axs.legend(handles=legend_handles, title='Color meaning')
+  plt.imshow(img)
+  plt.axis('off')
+  plt.savefig('./img/player-player.png', bbox_inches='tight')
+  plt.close(fig)

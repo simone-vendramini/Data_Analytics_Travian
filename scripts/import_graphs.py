@@ -1,4 +1,5 @@
 import igraph as ig
+from ranking import *
 from typing import List, Set
 
 NAME_FILES = {
@@ -7,6 +8,7 @@ NAME_FILES = {
     'messages': './datasets/messages-timestamped-2009-12-',
     'trades': './datasets/trades-timestamped-2009-12-',
     'union': './datasets/union_graph_',
+    'unionComm' : './datasets/union_community_graph_',
     'ext': '.graphml',
     'range_day': (1, 30)
 }
@@ -28,6 +30,8 @@ COMM_GRAPHS_ATTACKS = []
 COMM_GRAPHS_MESSAGES = [] 
 COMM_GRAPHS_TRADES = []
 PLAYERS_UNION_GRAPHS = []
+COMM_UNION_GRAPHS = []
+RELATION_MATRICES = []
 
 def read_gt_commiunities(path : str = "communities-2009-12-1.txt") -> List[Set[int]]:
     file = open(path, "r")
@@ -46,11 +50,16 @@ def read_gt_commiunities(path : str = "communities-2009-12-1.txt") -> List[Set[i
     return ris
 
 def get_graphs():
+    global RELATION_MATRICES
     for i in range(NAME_FILES['range_day'][0], NAME_FILES['range_day'][1] + 1):
         GRAPHS_ATTACKS.append(ig.read(NAME_FILES['attacks'] + str(i) + NAME_FILES['ext'], format="graphml"))
         GRAPHS_MESSAGES.append(ig.read(NAME_FILES['messages'] + str(i) + NAME_FILES['ext'], format="graphml"))
         GRAPHS_TRADES.append(ig.read(NAME_FILES['trades'] + str(i) + NAME_FILES['ext'], format="graphml"))
         PLAYERS_UNION_GRAPHS.append(ig.read(NAME_FILES['union'] + str(i-1) + NAME_FILES['ext'], format="graphml"))
+        COMM_UNION_GRAPHS.append(ig.read(NAME_FILES['unionComm'] + str(i-1) + NAME_FILES['ext'], format="graphml"))
+    read_all_communities_graphs()
+    RELATION_MATRICES.clear()
+    RELATION_MATRICES.extend(relation_score(COMM_GRAPHS_ATTACKS, COMM_GRAPHS_MESSAGES, COMM_GRAPHS_TRADES, 350, [0.6, 0.4, 1], norms=True, const=True))
     return GRAPHS_ATTACKS, GRAPHS_MESSAGES, GRAPHS_TRADES
 
 def get_communities():
