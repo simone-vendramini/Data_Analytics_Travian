@@ -168,17 +168,6 @@ def worker(communities, graphs, day, type, index, pbar):
   print("crated communities " + type + " graph of day " + str(day))
   return comm_graph
 
-def create_community_graphs(communities : List[List[Set[int]]],
-                            graphs_attacks : List[ig.Graph],
-                            graphs_messages : List[ig.Graph],
-                            graphs_trades : List[ig.Graph]) -> Tuple[List[ig.Graph]]:
-  graphs_communities_attacks = []
-  graphs_communities_messages = []
-  graphs_communities_trades = []
-  for day in range(len(communities)):
-    graphs_communities_attacks = None
-
-  return (graphs_communities_attacks, graphs_communities_messages, graphs_communities_trades)
 # GLOBALS
 
 NAME_FILES = {
